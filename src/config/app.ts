@@ -16,7 +16,8 @@ export const config: IConfig = {
     url: `${getRequiredEnvVar("BASE_URL")}:${getRequiredEnvNumber("PORT")}`,
   },
 
-  mongodb: getRequiredEnvVar("MONGODB_URI"),
+  mongodb: getRequiredEnvVar("MONGODB_URL"),
+  redis: getRequiredEnvVar("REDIS_URL"),
 
   cors: getRequiredEnvVar("CORS_ORIGINS")
     .split(",")
@@ -48,4 +49,6 @@ export const config: IConfig = {
     windowMs: convertToMilliseconds(getRequiredEnvNumber("RATE_LIMIT_WINDOW")),
     maxRequests: getRequiredEnvNumber("RATE_LIMIT_MAX_REQUESTS"),
   },
+  
+  discordAlert: getRequiredEnvVar("DISCORD_WEBHOOK_URL"),
 };

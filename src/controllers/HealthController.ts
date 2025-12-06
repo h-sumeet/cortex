@@ -4,6 +4,7 @@ import { sendSuccess } from "../utils/response";
 import { formatTimestamp, formatUptime } from "../utils/dayjs";
 import { logger } from "../helpers/logger";
 import { checkMongoDBHealth } from "../config/mongodb";
+import redis from "../config/redis";
 
 /**
  * Build base health object
@@ -40,6 +41,7 @@ export const detailedHealth = async (
 ): Promise<void> => {
   const checks = {
     mongodb: false,
+    redis: false,
   };
 
   try {
@@ -50,8 +52,16 @@ export const detailedHealth = async (
       logger.error("Database health check failed", { error });
     }
 
+    // Redis check
+    try {
+      const redisResult = await redis.ping();
+      checks.redis = redisResult === "PONG";
+    } catch (error) {
+      logger.error("Redis health check failed", { error });
+    }
+
     // Final response - only return essential health status
-    const allHealthy = checks.mongodb;
+    const allHealthy = checks.mongodb && checks.redis;
     const status = allHealthy ? "healthy" : "degraded";
 
     sendSuccess(res, "Health check successful", {

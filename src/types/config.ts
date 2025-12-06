@@ -2,6 +2,7 @@ export interface IConfig {
   port: number;
   nodeEnv: string;
   mongodb: string;
+  redis: string;
   cors: string[];
   logLevel: string;
   version: string;
@@ -32,4 +33,5 @@ export interface IConfig {
     windowMs: number;
     maxRequests: number;
   };
+  discordAlert: string;
 }

@@ -4,6 +4,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import healthRoutes from "./routes/health";
+import providerRoutes from "./routes/providers";
+import topicRoutes from "./routes/topics";
 import { config } from "./config/app";
 import { connect } from "./config/mongodb";
 import { errorHandler, notFound } from "./middleware/errorHandler";
@@ -81,6 +83,8 @@ const initializeMiddlewares = (app: Application): void => {
 // Initialize routes for the Express application
 const initializeRoutes = (app: Application): void => {
   app.use("/api/health", healthRoutes);
+  app.use("/api/v1/providers", providerRoutes);
+  app.use("/api/v1/topics", topicRoutes);
 };
 
 // Initialize error handling for the Express application
