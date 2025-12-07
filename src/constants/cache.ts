@@ -12,6 +12,15 @@ export const CACHE_KEYS = {
     BY_PROVIDER_ID: (providerId: string) => `topics:provider:${providerId}`,
     BY_PROVIDER_SLUG: (slug: string) => `topics:provider:slug:${slug}`,
   },
+  QUESTIONS: {
+    BY_SLUG: (slug: string) => `questions:slug:${slug}`,
+    BY_TOPIC_SLUG: (topicSlug: string, limit: number) =>
+      `questions:topic:${topicSlug}:limit:${limit}`,
+    BY_TOPIC_AND_SEQ: (topicSlug: string, seqNo: number) =>
+      `questions:topic:${topicSlug}:seq:${seqNo}`,
+    BY_TOPIC_AND_TAGS: (topicSlug: string, tags: string, limit: number) =>
+      `questions:topic:${topicSlug}:tags:${tags}:limit:${limit}`,
+  },
 } as const;
 
 // Cache TTL (Time To Live) in seconds

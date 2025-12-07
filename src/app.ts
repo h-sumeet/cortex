@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import healthRoutes from "./routes/health";
 import providerRoutes from "./routes/providers";
 import topicRoutes from "./routes/topics";
+import questionRoutes from "./routes/questions";
 import { config } from "./config/app";
 import { connect } from "./config/mongodb";
 import { errorHandler, notFound } from "./middleware/errorHandler";
@@ -85,6 +86,7 @@ const initializeRoutes = (app: Application): void => {
   app.use("/api/health", healthRoutes);
   app.use("/api/v1/providers", providerRoutes);
   app.use("/api/v1/topics", topicRoutes);
+  app.use("/api/v1/questions", questionRoutes);
 };
 
 // Initialize error handling for the Express application
