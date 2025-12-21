@@ -8,56 +8,68 @@ datasource db {
 }
 
 model Provider {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  provider        String
-  provider_slug   String    @unique
-  topic_count     Int       @default(0)
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  
-  topics          Topic[]
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  provider      String
+  provider_slug String   @unique
+  topic_count   Int      @default(0)
+  image_url     String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  topics Topic[]
 
   @@map("providers")
 }
 
-
 model Topic {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  topic           String
-  topic_slug      String    @unique
-  provider_id     String    @db.ObjectId 
-  qn_count        Int       @default(0)
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  
-  provider        Provider  @relation(fields: [provider_id], references: [id])
-  questions       Question[]
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  topic       String
+  topic_slug  String   @unique
+  provider_id String   @db.ObjectId
+  qn_count    Int      @default(0)
+  tags        String[]
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  provider  Provider   @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  questions Question[]
 
   @@map("topics")
 }
 
 model Question {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  seq_no          Float
-  topic_id        String    @db.ObjectId 
-  qn_slug         String    @unique  
-  question        String
-  answer          Int
-  options         Options[]
-  explanation     String?
-  image_url       String?
-  difficulty      String
-  tags            String[]
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  
-  topic           Topic     @relation(fields: [topic_id], references: [id])
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  seq_no      Float
+  topic_id    String     @db.ObjectId
+  qn_slug     String     @unique
+  question    String
+  answer      Int
+  options     Options[]
+  explanation String?
+  image_url   String?
+  code_snippet String?
+  tags        String[]
+  difficulty  Difficulty
+  status      String     @default("published") // draft, published, archived
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
 
+  topic Topic @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+
+  @@index([topic_id, tags])
+  @@index([topic_id, seq_no])
   @@map("questions")
 }
 
 type Options {
-  option_no      Int
-  option_text    String
-  image_url      String?
+  option_no   Int
+  option_text String
+  code_snippet String?
+  image_url   String?
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
 }

@@ -4,16 +4,17 @@
 
 ```
 /project-root
-└─ src
-   ├─ services           # All service functions (interact with DB/external APIs)
-   ├─ controllers        # All controller functions (business logic only)
-   ├─ routes             # All route definitions
-   ├─ middleware         # Middleware functions
-   ├─ utils              # Reusable utility/helper functions
-   ├─ types              # TypeScript type definitions & interfaces
-   ├─ constants          # All constant values & enums
-   ├─ config             # Configuration files (DB, environment variables, etc.)
-   ├─ tests              # Unit and integration tests
+├─ src
+│  ├─ services           # All service functions (interact with DB/external APIs)
+│  ├─ controllers        # All controller functions (business logic only)
+│  ├─ routes             # All route definitions
+│  ├─ middleware         # Middleware functions
+│  ├─ utils              # Reusable utility/helper functions
+│  ├─ types              # TypeScript type definitions & interfaces
+│  ├─ constants          # All constant values & enums
+│  ├─ config             # Configuration files (DB, environment variables, etc.)
+│
+├─ tests                 # Unit and integration tests (Jest, Supertest, etc.)
 ```
 
 ---

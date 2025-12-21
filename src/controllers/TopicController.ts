@@ -10,7 +10,7 @@ export const createTopic = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { topic, provider } = req.body;
+    const { topic, provider, tags } = req.body;
 
     if (!topic || !provider) {
       throwError("Topic name and provider are required", 400);
@@ -30,6 +30,7 @@ export const createTopic = async (
       topic,
       topic_slug,
       provider_id: providerData!.id,
+      tags: tags || [],
     });
 
     // Increment provider's topic count
@@ -157,7 +158,7 @@ export const updateTopic = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const { topic, provider_id } = req.body;
+    const { topic, provider_id, tags } = req.body;
 
     if (!id) {
       throwError("Topic ID is required", 400);
@@ -167,6 +168,7 @@ export const updateTopic = async (
       topic?: string;
       topic_slug?: string;
       provider_id?: string;
+      tags?: string[];
     } = {};
 
     if (topic) {
@@ -176,6 +178,10 @@ export const updateTopic = async (
 
     if (provider_id) {
       updateData.provider_id = provider_id;
+    }
+
+    if (tags) {
+      updateData.tags = tags;
     }
 
     const updatedTopic = await TopicService.updateTopic(id, updateData);

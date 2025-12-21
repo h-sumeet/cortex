@@ -24,6 +24,7 @@ export const createQuestion = async (
       image_url,
       difficulty,
       tags,
+      status,
     } = req.body;
 
     // Validate required fields
@@ -69,6 +70,7 @@ export const createQuestion = async (
       image_url,
       difficulty,
       tags: tags || [],
+      status: status || "published",
     });
 
     // Increment topic's question count
@@ -129,7 +131,13 @@ export const getQuestions = async (
       ? Math.min(parseInt(limit as string, 10), QUESTION_DEFAULTS.MAX_LIMIT)
       : QUESTION_DEFAULTS.FETCH_LIMIT;
 
-    // Scenario 1: Get question by topic and index (1-based)
+    // Parse tags if provided
+    const tagArray =
+      tags && typeof tags === "string"
+        ? tags.split(",").map((t) => t.trim())
+        : undefined;
+
+    // Scenario 1: Get question by topic and index (with optional tags filter)
     if (seq_no) {
       const index = parseInt(seq_no as string, 10);
 
@@ -137,54 +145,58 @@ export const getQuestions = async (
         throwError("Index must be a positive integer starting from 1", 400);
       }
 
-      const question = await QuestionService.getQuestionByTopicAndIndex(
+      const result = await QuestionService.getQuestionByTopicAndIndex(
         topic_slug,
-        index
+        index,
+        tagArray
       );
 
-      if (!question) {
+      if (!result || !result.question) {
         throwError("Question not found at the specified index", 404);
       }
 
-      sendSuccess(res, "Question fetched successfully", question);
+      sendSuccess(res, "Question fetched successfully", {
+        ...result.question,
+        total_count: result.totalCount,
+      });
       return;
     }
 
     // Scenario 2: Get questions by topic and tags
-    if (tags) {
-      const tagArray =
-        typeof tags === "string" ? tags.split(",").map((t) => t.trim()) : [];
-      const questions = await QuestionService.getQuestionsByTopicAndTags(
+    if (tagArray) {
+      const result = await QuestionService.getQuestionsByTopicAndTags(
         topic_slug,
         tagArray,
         questionLimit
       );
 
-      if (!questions) {
+      if (!result) {
         throwError("Topic not found", 404);
       }
 
       sendSuccess(res, "Questions fetched successfully", {
-        questions,
-        count: questions.length,
+        questions: result.questions,
+        count: result.questions.length,
+        total_count: result.totalCount,
         limit: questionLimit,
       });
       return;
     }
 
     // Scenario 3: Get questions by topic only
-    const questions = await QuestionService.getQuestionsByTopicSlug(
+    const result = await QuestionService.getQuestionsByTopicSlug(
       topic_slug,
       questionLimit
     );
 
-    if (!questions) {
+    if (!result) {
       throwError("Topic not found", 404);
     }
 
     sendSuccess(res, "Questions fetched successfully", {
-      questions,
-      count: questions.length,
+      questions: result.questions,
+      count: result.questions.length,
+      total_count: result.totalCount,
       limit: questionLimit,
     });
   } catch (error) {
@@ -212,6 +224,7 @@ export const updateQuestion = async (
       image_url,
       difficulty,
       tags,
+      status,
     } = req.body;
 
     if (!id) {
@@ -227,6 +240,7 @@ export const updateQuestion = async (
     if (image_url !== undefined) updateData.image_url = image_url;
     if (difficulty) updateData.difficulty = difficulty;
     if (tags) updateData.tags = tags;
+    if (status) updateData.status = status;
 
     // Handle topic change
     if (topic) {

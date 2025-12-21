@@ -1,5 +1,6 @@
 import redis from "../config/redis";
 import { logger } from "../helpers/logger";
+import { CACHE_KEYS, CACHE_PATTERNS } from "../constants/cache";
 
 /**
  * Get data from Redis cache
@@ -60,8 +61,8 @@ export const deleteCachePattern = async (pattern: string): Promise<void> => {
  */
 export const clearProviderCache = async (): Promise<void> => {
   try {
-    await deleteCachePattern("providers:*");
-    await deleteCachePattern("topics:*"); // Topics depend on providers
+    await deleteCachePattern(CACHE_PATTERNS.PROVIDERS);
+    await deleteCachePattern(CACHE_PATTERNS.TOPICS); // Topics depend on providers
     logger.info("Provider cache cleared");
   } catch (error) {
     logger.error("Error clearing provider cache", error);
@@ -73,19 +74,19 @@ export const clearProviderCache = async (): Promise<void> => {
  */
 export const clearTopicCache = async (): Promise<void> => {
   try {
-    await deleteCachePattern("topics:*");
+    await deleteCachePattern(CACHE_PATTERNS.TOPICS);
     logger.info("Topic cache cleared");
   } catch (error) {
     logger.error("Error clearing topic cache", error);
   }
 };
-
 /**
  * Clear cache for specific provider
  */
 export const clearProviderCacheById = async (id: string): Promise<void> => {
   try {
     await deleteCachePattern(`providers:*${id}*`);
+    await deleteCache(CACHE_KEYS.PROVIDERS.ALL); // Clear all providers list
     await deleteCachePattern(`topics:provider:${id}*`);
     logger.info(`Cache cleared for provider: ${id}`);
   } catch (error) {

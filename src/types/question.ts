@@ -1,3 +1,5 @@
+export type Difficulty = "EASY" | "MEDIUM" | "HARD";
+
 export interface CreateQuestionInput {
   seq_no: number;
   topic_id: string;
@@ -6,8 +8,9 @@ export interface CreateQuestionInput {
   options: QuestionOption[];
   explanation?: string;
   image_url?: string;
-  difficulty: string;
+  difficulty: Difficulty;
   tags: string[];
+  status?: string;
 }
 
 export interface UpdateQuestionInput {
@@ -18,8 +21,9 @@ export interface UpdateQuestionInput {
   options?: QuestionOption[];
   explanation?: string;
   image_url?: string;
-  difficulty?: string;
+  difficulty?: Difficulty;
   tags?: string[];
+  status?: string;
 }
 
 export interface QuestionOption {
@@ -38,8 +42,9 @@ export interface QuestionResponse {
   options: QuestionOption[];
   explanation?: string;
   image_url?: string;
-  difficulty: string;
+  difficulty: Difficulty;
   tags: string[];
+  status: string;
   created_at: Date;
   updated_at: Date;
 }

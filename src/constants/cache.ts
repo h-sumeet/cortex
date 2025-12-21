@@ -29,3 +29,10 @@ export const CACHE_TTL = {
   ONE_HOUR: 3600,
   THIRTY_MINUTES: 1800,
 } as const;
+
+// Cache key patterns for bulk operations
+export const CACHE_PATTERNS = {
+  PROVIDERS: "providers:*",
+  TOPICS: "topics:*",
+  QUESTIONS: "questions:*",
+} as const;
