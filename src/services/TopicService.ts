@@ -2,6 +2,7 @@ import prisma from "../config/prisma";
 import type { CreateTopicInput, UpdateTopicInput } from "../types/topic";
 import { getCache, setCache, clearTopicCache, clearTopicCacheById, clearProviderCacheById } from "../utils/cache";
 import { CACHE_KEYS, CACHE_TTL } from "../constants/cache";
+import type { Topic } from "@prisma/client";
 
 export const createTopic = async (data: CreateTopicInput) => {
   const topic = await prisma.topic.create({
@@ -35,7 +36,7 @@ export const getAllTopics = async () => {
   return topics;
 };
 
-export const getTopicById = async (id: string) => {
+export const getTopicById = async (id: string): Promise<Topic | null> => {
   const cacheKey = CACHE_KEYS.TOPICS.BY_ID(id);
   
   // Try to get from cache

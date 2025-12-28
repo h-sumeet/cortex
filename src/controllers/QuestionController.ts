@@ -1,12 +1,14 @@
 import type { Request, Response, NextFunction } from "express";
 import * as QuestionService from "../services/QuestionService";
 import * as TopicService from "../services/TopicService";
+import * as ProfileService from "../services/ProfileService";
 import { sendSuccess, throwError } from "../utils/response";
 import { generateSlug, generateQuestionSlug } from "../utils/slug";
 import { QUESTION_DEFAULTS } from "../constants/question";
 
 /**
  * Create a new question
+ * If seq_no is provided and exists, shifts other questions
  */
 export const createQuestion = async (
   req: Request,
@@ -27,7 +29,6 @@ export const createQuestion = async (
       status,
     } = req.body;
 
-    // Validate required fields
     if (
       !topic ||
       !question ||
@@ -41,7 +42,6 @@ export const createQuestion = async (
       );
     }
 
-    // Get topic by slug
     const topic_slug = generateSlug(topic);
     const topicData = await TopicService.getTopicBySlug(topic_slug);
 
@@ -49,19 +49,23 @@ export const createQuestion = async (
       throwError("Topic not found", 404);
     }
 
-    // If seq_no not provided, get the next sequence number
-    let sequence_no = seq_no;
-    if (!sequence_no) {
+    // Get sequence number
+    let sequence_no: number;
+    if (seq_no !== undefined) {
+      sequence_no = typeof seq_no === "string" ? parseInt(seq_no, 10) : seq_no;
+      if (isNaN(sequence_no) || sequence_no < 1) {
+        throwError("seq_no must be a positive integer", 400);
+      }
+    } else {
       const lastSeqNo = await QuestionService.getLastSeqNo(topicData.id);
       sequence_no = lastSeqNo + 1;
     }
 
-    // Generate unique question slug (first 8 words + hash)
     const qn_slug = generateQuestionSlug(question);
 
     const newQuestion = await QuestionService.createQuestion({
       seq_no: sequence_no,
-      topic_id: topicData!.id,
+      topic_id: topicData.id,
       qn_slug,
       question,
       answer,
@@ -73,8 +77,7 @@ export const createQuestion = async (
       status: status || "published",
     });
 
-    // Increment topic's question count
-    await TopicService.incrementQuestionCount(topicData!.id);
+    await TopicService.incrementQuestionCount(topicData.id);
 
     sendSuccess(res, "Question created successfully", newQuestion, 201);
   } catch (error) {
@@ -84,6 +87,7 @@ export const createQuestion = async (
 
 /**
  * Get question by slug
+ * Checks premium access if question's seq_no exceeds topic's free_limit
  */
 export const getQuestionBySlug = async (
   req: Request,
@@ -92,18 +96,22 @@ export const getQuestionBySlug = async (
 ): Promise<void> => {
   try {
     const { slug } = req.params;
-
     if (!slug) {
       throwError("Question slug is required", 400);
     }
 
     const question = await QuestionService.getQuestionBySlug(slug);
-
     if (!question) {
       throwError("Question not found", 404);
     }
 
-    sendSuccess(res, "Question fetched successfully", question);
+    const questionsArray = Array.isArray(question) ? question : [question];
+    const filteredQuestion = await QuestionService.filterPremiumQuestions(
+      questionsArray,
+      req.user?.id
+    );
+
+    sendSuccess(res, "Question fetched successfully", filteredQuestion);
   } catch (error) {
     next(error);
   }
@@ -119,85 +127,139 @@ export const getQuestions = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { topic_slug, seq_no, tags, limit } = req.query;
+    const { topic_slug, index, tags, limit } = req.query;
 
-    // Validate required topic_slug
     if (!topic_slug || typeof topic_slug !== "string") {
       throwError("topic_slug is required", 400);
     }
 
-    // Parse limit with default
+    const indexNumber = parseInt(index as string, 10);
+    if (isNaN(indexNumber) || indexNumber < 1) {
+      throwError("index is required and must be a valid number", 400);
+    }
+
     const questionLimit = limit
       ? Math.min(parseInt(limit as string, 10), QUESTION_DEFAULTS.MAX_LIMIT)
       : QUESTION_DEFAULTS.FETCH_LIMIT;
 
-    // Parse tags if provided
     const tagArray =
       tags && typeof tags === "string"
         ? tags.split(",").map((t) => t.trim())
         : undefined;
 
-    // Scenario 1: Get question by topic and index (with optional tags filter)
-    if (seq_no) {
-      const index = parseInt(seq_no as string, 10);
-
-      if (index < 1) {
-        throwError("Index must be a positive integer starting from 1", 400);
-      }
-
-      const result = await QuestionService.getQuestionByTopicAndIndex(
-        topic_slug,
-        index,
-        tagArray
-      );
-
-      if (!result || !result.question) {
-        throwError("Question not found at the specified index", 404);
-      }
-
-      sendSuccess(res, "Question fetched successfully", {
-        ...result.question,
-        total_count: result.totalCount,
-      });
-      return;
-    }
-
-    // Scenario 2: Get questions by topic and tags
+    // Get questions by topic and tags
     if (tagArray) {
-      const result = await QuestionService.getQuestionsByTopicAndTags(
+      const result = await QuestionService.getQuestionsByTags(
         topic_slug,
+        indexNumber,
         tagArray,
         questionLimit
       );
 
-      if (!result) {
-        throwError("Topic not found", 404);
+      if (!result || result.questions.length === 0) {
+        throwError("No questions found", 404);
       }
 
+      const filteredQuestions = await QuestionService.filterPremiumQuestions(
+        result.questions,
+        req.user?.id
+      );
+
+      // Handle union type Question | Question[]
+      const questionsArray = Array.isArray(filteredQuestions)
+        ? filteredQuestions
+        : [filteredQuestions];
+
       sendSuccess(res, "Questions fetched successfully", {
-        questions: result.questions,
-        count: result.questions.length,
+        questions: questionsArray,
+        count: questionsArray.length,
         total_count: result.totalCount,
         limit: questionLimit,
       });
       return;
     }
 
-    // Scenario 3: Get questions by topic only
-    const result = await QuestionService.getQuestionsByTopicSlug(
+    // Get questions by topic only
+    const result = await QuestionService.getQuestionByIndex(
       topic_slug,
-      questionLimit
+      indexNumber
     );
 
-    if (!result) {
-      throwError("Topic not found", 404);
+    if (!result || result.questions.length === 0) {
+      throwError("No questions found", 404);
     }
 
+    const filteredQuestions = await QuestionService.filterPremiumQuestions(
+      result.questions,
+      req.user?.id
+    );
+
     sendSuccess(res, "Questions fetched successfully", {
-      questions: result.questions,
-      count: result.questions.length,
+      questions: filteredQuestions,
       total_count: result.totalCount,
       limit: questionLimit,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get bookmarked question by seq_no
+ * Requires authentication and premium access
+ * Query: topic_slug, seq_no
+ */
+export const getBookmarkedQuestion = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { topic_slug, index } = req.query;
+    console.log("Received query params:", req.query);
+
+    if (!topic_slug || typeof topic_slug !== "string") {
+      throwError("topic_slug is required", 400);
+    }
+
+    const indexNumber = parseInt(index as string, 10);
+    if (isNaN(indexNumber) || indexNumber < 1) {
+      throwError("index must be a valid number", 400);
+    }
+
+    // Get user's bookmarked seq_nos for the topic
+    const bookmarkedSeqNos = await ProfileService.getTopicBookmarks(
+      userId,
+      topic_slug
+    );
+
+    if (bookmarkedSeqNos.length === 0) {
+      throwError("No bookmarks found for this topic", 404);
+    }
+
+    const result = await QuestionService.getBookmarkedQuestions(
+      topic_slug,
+      indexNumber,
+      bookmarkedSeqNos
+    );
+
+    if (!result || !result.questions) {
+      throwError(
+        "Bookmarked question not found with the specified seq_no",
+        404
+      );
+    }
+
+    const filteredQuestions = await QuestionService.filterPremiumQuestions(
+      result.questions,
+      req.user?.id
+    );
+
+    sendSuccess(res, "Bookmarked question fetched successfully", {
+      questions: filteredQuestions,
+      total_bookmarked: result.totalCount,
+      bookmarked_seq_nos: bookmarkedSeqNos,
     });
   } catch (error) {
     next(error);
@@ -233,7 +295,14 @@ export const updateQuestion = async (
 
     const updateData: any = {};
 
-    if (seq_no !== undefined) updateData.seq_no = seq_no;
+    if (seq_no !== undefined) {
+      const seqNoNumber =
+        typeof seq_no === "string" ? parseInt(seq_no, 10) : seq_no;
+      if (isNaN(seqNoNumber) || seqNoNumber < 1) {
+        throwError("seq_no must be a positive integer", 400);
+      }
+      updateData.seq_no = seqNoNumber;
+    }
     if (answer !== undefined) updateData.answer = answer;
     if (options) updateData.options = options;
     if (explanation !== undefined) updateData.explanation = explanation;
@@ -242,7 +311,6 @@ export const updateQuestion = async (
     if (tags) updateData.tags = tags;
     if (status) updateData.status = status;
 
-    // Handle topic change
     if (topic) {
       const topic_slug = generateSlug(topic);
       const topicData = await TopicService.getTopicBySlug(topic_slug);
@@ -254,7 +322,6 @@ export const updateQuestion = async (
       updateData.topic_id = topicData.id;
     }
 
-    // Handle question text change (regenerate slug)
     if (question) {
       updateData.question = question;
       updateData.qn_slug = generateQuestionSlug(question);
@@ -264,6 +331,10 @@ export const updateQuestion = async (
       id,
       updateData
     );
+
+    if (!updatedQuestion) {
+      throwError("Question not found", 404);
+    }
 
     sendSuccess(res, "Question updated successfully", updatedQuestion);
   } catch (error) {
@@ -286,16 +357,14 @@ export const deleteQuestion = async (
       throwError("Question ID is required", 400);
     }
 
-    // Get question to find topic_id
-    const question = await QuestionService.getQuestionBySlug(id);
+    const question = await QuestionService.getQuestionById(id);
     if (!question) {
       throwError("Question not found", 404);
     }
 
     await QuestionService.deleteQuestion(id);
 
-    // Decrement topic's question count
-    await TopicService.decrementQuestionCount(question!.topic_id);
+    await TopicService.decrementQuestionCount(question.topic_id);
 
     sendSuccess(res, "Question deleted successfully", null, 204);
   } catch (error) {

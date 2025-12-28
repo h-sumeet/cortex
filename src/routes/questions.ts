@@ -3,9 +3,11 @@ import {
   createQuestion,
   getQuestions,
   getQuestionBySlug,
+  getBookmarkedQuestion,
   updateQuestion,
   deleteQuestion,
 } from "../controllers/QuestionController";
+import { authenticate, optionalAuth } from "../middleware/auth";
 
 const router = Router();
 
@@ -13,10 +15,13 @@ const router = Router();
 router.post("/", createQuestion);
 
 // Get questions with filters (topic_slug required, optional: seq_no, tags, limit)
-router.get("/", getQuestions);
+router.get("/", optionalAuth, getQuestions);
 
-// Get question by slug
-router.get("/slug/:slug", getQuestionBySlug);
+// Get bookmarked question (requires auth)
+router.get("/bookmarked", authenticate, getBookmarkedQuestion);
+
+// Get question by slug (uses optionalAuth for premium check)
+router.get("/slug/:slug", optionalAuth, getQuestionBySlug);
 
 // Update question
 router.put("/:id", updateQuestion);

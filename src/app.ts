@@ -7,6 +7,7 @@ import healthRoutes from "./routes/health";
 import providerRoutes from "./routes/providers";
 import topicRoutes from "./routes/topics";
 import questionRoutes from "./routes/questions";
+import profileRoutes from "./routes/profile";
 import { config } from "./config/app";
 import { connect } from "./config/mongodb";
 import { errorHandler, notFound } from "./middleware/errorHandler";
@@ -46,7 +47,12 @@ const initializeMiddlewares = (app: Application): void => {
       origin: config.cors.length > 0 ? config.cors : false,
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "x-refresh-token",
+        "service",
+      ],
       exposedHeaders: [""],
     })
   );
@@ -84,9 +90,10 @@ const initializeMiddlewares = (app: Application): void => {
 // Initialize routes for the Express application
 const initializeRoutes = (app: Application): void => {
   app.use("/api/health", healthRoutes);
-  app.use("/api/v1/providers", providerRoutes);
-  app.use("/api/v1/topics", topicRoutes);
-  app.use("/api/v1/questions", questionRoutes);
+  app.use("/api/providers", providerRoutes);
+  app.use("/api/topics", topicRoutes);
+  app.use("/api/questions", questionRoutes);
+  app.use("/api/profile", profileRoutes);
 };
 
 // Initialize error handling for the Express application

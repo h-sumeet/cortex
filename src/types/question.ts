@@ -11,6 +11,7 @@ export interface CreateQuestionInput {
   difficulty: Difficulty;
   tags: string[];
   status?: string;
+  is_premium?: boolean;
 }
 
 export interface UpdateQuestionInput {
@@ -24,6 +25,7 @@ export interface UpdateQuestionInput {
   difficulty?: Difficulty;
   tags?: string[];
   status?: string;
+  is_premium?: boolean;
 }
 
 export interface QuestionOption {

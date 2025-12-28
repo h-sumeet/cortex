@@ -38,21 +38,23 @@ model Topic {
 }
 
 model Question {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  seq_no      Float
-  topic_id    String     @db.ObjectId
-  qn_slug     String     @unique
-  question    String
-  answer      Int
-  options     Options[]
-  explanation String?
-  image_url   String?
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  seq_no       Int
+  topic_id     String     @db.ObjectId
+  qn_slug      String     @unique
+  question     String
+  answer       Int
+  options      Options[]
+  explanation  String?
+  image_url    String?
   code_snippet String?
-  tags        String[]
-  difficulty  Difficulty
-  status      String     @default("published") // draft, published, archived
-  created_at  DateTime   @default(now())
-  updated_at  DateTime   @updatedAt
+  tags         String[]
+  difficulty   Difficulty
+  status       String     @default("published") // draft, published, archived
+  upvotes      Int        @default(0)
+  is_premium   Boolean    @default(false)
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
 
   topic Topic @relation(fields: [topic_id], references: [id], onDelete: Cascade)
 
@@ -61,11 +63,26 @@ model Question {
   @@map("questions")
 }
 
+model Profile {
+  id         String          @id @default(auto()) @map("_id") @db.ObjectId
+  user_id    String          @unique
+  topics     UserTopicData[]
+  created_at DateTime        @default(now())
+  updated_at DateTime        @updatedAt
+
+  @@map("profiles")
+}
+
+type UserTopicData {
+  topic_id   String @db.ObjectId
+  bookmarked Int[]
+}
+
 type Options {
-  option_no   Int
-  option_text String
+  option_no    Int
+  option_text  String
   code_snippet String?
-  image_url   String?
+  image_url    String?
 }
 
 enum Difficulty {

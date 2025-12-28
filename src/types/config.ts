@@ -10,28 +10,10 @@ export interface IConfig {
     name: string;
     url: string;
   };
-  jwt: {
-    secret: string;
-    refreshSecret: string;
-    expiresIn: string;
-    refreshExpiresIn: string;
-  };
-  email: {
-    host: string;
-    port: number;
-    secure: boolean;
-    user: string;
-    password: string;
-    from: string;
-  };
-  security: {
-    bcryptRounds: number;
-    maxLoginAttempts: number;
-    lockTime: number;
-  };
   rateLimit: {
     windowMs: number;
     maxRequests: number;
   };
   discordAlert: string;
+  credlockUrl: string;
 }
