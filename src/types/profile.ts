@@ -26,8 +26,8 @@ export interface AuthenticatedUser {
   email: string;
 }
 
-// User topic data (bookmarks per topic)
-export interface UserTopicData {
+// User bookmark data (bookmarks per topic)
+export interface UserBookmarkData {
   topic_id: string;
-  bookmarked: number[];
+  bookmarked_seq_nos: number[];
 }

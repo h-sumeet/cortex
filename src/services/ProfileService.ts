@@ -1,5 +1,5 @@
 import prisma from "../config/prisma";
-import type { UserTopicData } from "../types/profile";
+import type { UserBookmarkData } from "../types/profile";
 import { throwError } from "../utils/response";
 import { getCache, setCache, deleteCache } from "../utils/cache";
 import { CACHE_KEYS, CACHE_TTL } from "../constants/cache";
@@ -8,6 +8,7 @@ import { ERRORS_MSG } from "../constants/error";
 
 /**
  * Get or create user profile record
+ * Handles migration from old 'topics' field to new 'bookmarks' field
  */
 const getOrCreateProfile = async (userId: string) => {
   const cacheKey = CACHE_KEYS.PROFILE.BY_USER_ID(userId);
@@ -22,9 +23,27 @@ const getOrCreateProfile = async (userId: string) => {
     profile = await prisma.profile.create({
       data: {
         user_id: userId,
-        topics: [],
+        bookmarks: [],
       },
     });
+  } else {
+    // Handle migration from old 'topics' field to new 'bookmarks' field
+    const profileData = profile as unknown as Record<string, unknown>;
+    if (profileData["topics"] && !profile.bookmarks?.length) {
+      const oldTopics = profileData["topics"] as Array<{
+        topic_id: string;
+        bookmarked: number[];
+      }>;
+      const migratedBookmarks: UserBookmarkData[] = oldTopics.map((t) => ({
+        topic_id: t.topic_id,
+        bookmarked_seq_nos: t.bookmarked ?? [],
+      }));
+
+      profile = await prisma.profile.update({
+        where: { id: profile.id },
+        data: { bookmarks: migratedBookmarks },
+      });
+    }
   }
 
   await setCache(cacheKey, profile, CACHE_TTL.FIVE_MINUTES);
@@ -46,16 +65,16 @@ export const getTopicBookmarks = async (
   topicSlug: string
 ): Promise<number[]> => {
   const topic = await getTopicBySlug(topicSlug);
-  
+
   if (!topic) {
     throwError(ERRORS_MSG.TOPIC_NOT_FOUND, 404);
   }
 
   const profile = await getOrCreateProfile(userId);
-  const topics = profile.topics as UserTopicData[];
+  const bookmarks = profile.bookmarks as UserBookmarkData[];
 
-  const topicData = topics.find((t) => t.topic_id === topic.id);
-  return topicData?.bookmarked ?? [];
+  const topicData = bookmarks.find((b) => b.topic_id === topic.id);
+  return topicData?.bookmarked_seq_nos ?? [];
 };
 
 /**
@@ -80,7 +99,6 @@ export const toggleBookmark = async (
 ): Promise<boolean> => {
   const topic = await getTopicBySlug(topicSlug);
 
-
   if (!topic) {
     throwError(ERRORS_MSG.TOPIC_NOT_FOUND, 404);
   }
@@ -91,38 +109,40 @@ export const toggleBookmark = async (
   }
 
   const profile = await getOrCreateProfile(userId);
-  const topics = profile.topics as UserTopicData[];
+  const bookmarks = profile.bookmarks as UserBookmarkData[];
 
-  let topicIndex = topics.findIndex((t) => t.topic_id === topic.id);
+  let bookmarkIndex = bookmarks.findIndex((b) => b.topic_id === topic.id);
   let isNowBookmarked: boolean;
 
-  if (topicIndex === -1) {
-    // Create new topic entry with bookmark
-    topics.push({ topic_id: topic.id, bookmarked: [seqNo] });
+  if (bookmarkIndex === -1) {
+    // Create new bookmark entry for topic
+    bookmarks.push({ topic_id: topic.id, bookmarked_seq_nos: [seqNo] });
     isNowBookmarked = true;
   } else {
-    const topicData = topics[topicIndex]!;
-    const bookmarkIndex = topicData.bookmarked.indexOf(seqNo);
+    const bookmarkData = bookmarks[bookmarkIndex]!;
+    const seqNoIndex = bookmarkData.bookmarked_seq_nos.indexOf(seqNo);
 
-    if (bookmarkIndex === -1) {
+    if (seqNoIndex === -1) {
       // Add bookmark
-      topicData.bookmarked.push(seqNo);
+      bookmarkData.bookmarked_seq_nos.push(seqNo);
       isNowBookmarked = true;
     } else {
       // Remove bookmark
-      topicData.bookmarked.splice(bookmarkIndex, 1);
+      bookmarkData.bookmarked_seq_nos.splice(seqNoIndex, 1);
       isNowBookmarked = false;
     }
 
-    topics[topicIndex] = topicData;
+    bookmarks[bookmarkIndex] = bookmarkData;
   }
 
-  // Remove empty topic entries
-  const filteredTopics = topics.filter((t) => t.bookmarked.length > 0);
+  // Remove empty bookmark entries
+  const filteredBookmarks = bookmarks.filter(
+    (b) => b.bookmarked_seq_nos.length > 0
+  );
 
   await prisma.profile.update({
     where: { id: profile.id },
-    data: { topics: filteredTopics },
+    data: { bookmarks: filteredBookmarks },
   });
 
   await clearProfileCache(userId);
@@ -144,13 +164,13 @@ export const clearTopicBookmarks = async (
   }
 
   const profile = await getOrCreateProfile(userId);
-  const topics = profile.topics as UserTopicData[];
+  const bookmarks = profile.bookmarks as UserBookmarkData[];
 
-  const updatedTopics = topics.filter((t) => t.topic_id !== topic.id);
+  const updatedBookmarks = bookmarks.filter((b) => b.topic_id !== topic.id);
 
   await prisma.profile.update({
     where: { id: profile.id },
-    data: { topics: updatedTopics },
+    data: { bookmarks: updatedBookmarks },
   });
 
   await clearProfileCache(userId);

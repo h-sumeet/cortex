@@ -64,18 +64,18 @@ model Question {
 }
 
 model Profile {
-  id         String          @id @default(auto()) @map("_id") @db.ObjectId
-  user_id    String          @unique
-  topics     UserTopicData[]
-  created_at DateTime        @default(now())
-  updated_at DateTime        @updatedAt
+  id         String             @id @default(auto()) @map("_id") @db.ObjectId
+  user_id    String             @unique
+  bookmarks  UserBookmarkData[]
+  created_at DateTime           @default(now())
+  updated_at DateTime           @updatedAt
 
   @@map("profiles")
 }
 
-type UserTopicData {
-  topic_id   String @db.ObjectId
-  bookmarked Int[]
+type UserBookmarkData {
+  topic_id           String @db.ObjectId
+  bookmarked_seq_nos Int[]
 }
 
 type Options {
