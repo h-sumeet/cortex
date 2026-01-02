@@ -1,5 +1,5 @@
 import prisma from "../config/prisma";
-import type { CreateTopicInput, UpdateTopicInput } from "../types/topic";
+import type { CreateTopicInput, UpdateTopicInput, TopicWithProvider } from "../types/topic";
 import { getCache, setCache, clearTopicCache, clearTopicCacheById, clearProviderCacheById } from "../utils/cache";
 import { CACHE_KEYS, CACHE_TTL } from "../constants/cache";
 import type { Topic } from "@prisma/client";
@@ -40,7 +40,7 @@ export const getTopicById = async (id: string): Promise<Topic | null> => {
   const cacheKey = CACHE_KEYS.TOPICS.BY_ID(id);
   
   // Try to get from cache
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<Topic>(cacheKey);
   if (cached) return cached;
   
   // Get from database
@@ -57,11 +57,11 @@ export const getTopicById = async (id: string): Promise<Topic | null> => {
   return topic;
 };
 
-export const getTopicBySlug = async (slug: string) => {
+export const getTopicBySlug = async (slug: string): Promise<TopicWithProvider | null> => {
   const cacheKey = CACHE_KEYS.TOPICS.BY_SLUG(slug);
   
   // Try to get from cache
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<TopicWithProvider>(cacheKey);
   if (cached) return cached;
   
   // Get from database

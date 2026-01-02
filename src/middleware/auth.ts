@@ -5,11 +5,9 @@ import { CREDLOCK_API } from "../constants/api";
 import { ERRORS_MSG } from "../constants/error";
 
 // Extend Express Request to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthenticatedUser;
-    }
+declare module "express-serve-static-core" {
+  interface Request {
+    user?: AuthenticatedUser;
   }
 }
 

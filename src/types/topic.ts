@@ -22,3 +22,17 @@ export interface TopicResponse {
   created_at: Date;
   updated_at: Date;
 }
+
+export interface ProviderInclude {
+  id: string;
+  provider: string;
+  provider_slug: string;
+  topic_count: number;
+  image_url: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface TopicWithProvider extends TopicResponse {
+  provider: ProviderInclude;
+}

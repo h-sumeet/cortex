@@ -2,6 +2,7 @@ import prisma from "../config/prisma";
 import type {
   CreateProviderInput,
   UpdateProviderInput,
+  ProviderWithTopics,
 } from "../types/provider";
 import { getCache, setCache, clearProviderCache, clearProviderCacheById } from "../utils/cache";
 import { CACHE_KEYS, CACHE_TTL } from "../constants/cache";
@@ -35,11 +36,11 @@ export const getAllProviders = async () => {
   return providers;
 };
 
-export const getProviderById = async (id: string) => {
+export const getProviderById = async (id: string): Promise<ProviderWithTopics | null> => {
   const cacheKey = CACHE_KEYS.PROVIDERS.BY_ID(id);
   
   // Try to get from cache
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<ProviderWithTopics>(cacheKey);
   if (cached) return cached;
   
   // Get from database
@@ -56,11 +57,11 @@ export const getProviderById = async (id: string) => {
   return provider;
 };
 
-export const getProviderBySlug = async (slug: string) => {
+export const getProviderBySlug = async (slug: string): Promise<ProviderWithTopics | null> => {
   const cacheKey = CACHE_KEYS.PROVIDERS.BY_SLUG(slug);
   
   // Try to get from cache
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<ProviderWithTopics>(cacheKey);
   if (cached) return cached;
   
   // Get from database

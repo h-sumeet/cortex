@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 
 // Prisma error handler
-const handlePrismaError = (error: any): { code: number; message: string } => {
+const handlePrismaError = (error: { code?: string; message?: string }): { code: number; message: string } => {
   // P2025: Record not found
   if (error.code === "P2025") {
     return {
@@ -43,7 +43,7 @@ const handlePrismaError = (error: any): { code: number; message: string } => {
 
 // global error handler
 export const errorHandler = (
-  err: any,
+  err: Error & { statusCode?: number; code?: string; isOperational?: boolean },
   req: Request,
   res: Response,
   next: NextFunction // eslint-disable-line @typescript-eslint/no-unused-vars

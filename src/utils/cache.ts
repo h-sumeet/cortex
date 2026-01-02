@@ -5,7 +5,7 @@ import { CACHE_KEYS, CACHE_PATTERNS } from "../constants/cache";
 /**
  * Get data from Redis cache
  */
-export const getCache = async <T = any>(key: string): Promise<T | null> => {
+export const getCache = async <T = unknown>(key: string): Promise<T | null> => {
   try {
     const data = await redis.get(key);
     if (!data) return null;

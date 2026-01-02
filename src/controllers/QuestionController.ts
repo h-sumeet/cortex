@@ -217,7 +217,6 @@ export const getBookmarkedQuestion = async (
   try {
     const userId = req.user!.id;
     const { topic_slug, index } = req.query;
-    console.log("Received query params:", req.query);
 
     if (!topic_slug || typeof topic_slug !== "string") {
       throwError("topic_slug is required", 400);
@@ -293,7 +292,7 @@ export const updateQuestion = async (
       throwError("Question ID is required", 400);
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (seq_no !== undefined) {
       const seqNoNumber =
@@ -301,15 +300,15 @@ export const updateQuestion = async (
       if (isNaN(seqNoNumber) || seqNoNumber < 1) {
         throwError("seq_no must be a positive integer", 400);
       }
-      updateData.seq_no = seqNoNumber;
+      updateData["seq_no"] = seqNoNumber;
     }
-    if (answer !== undefined) updateData.answer = answer;
-    if (options) updateData.options = options;
-    if (explanation !== undefined) updateData.explanation = explanation;
-    if (image_url !== undefined) updateData.image_url = image_url;
-    if (difficulty) updateData.difficulty = difficulty;
-    if (tags) updateData.tags = tags;
-    if (status) updateData.status = status;
+    if (answer !== undefined) updateData["answer"] = answer;
+    if (options) updateData["options"] = options;
+    if (explanation !== undefined) updateData["explanation"] = explanation;
+    if (image_url !== undefined) updateData["image_url"] = image_url;
+    if (difficulty) updateData["difficulty"] = difficulty;
+    if (tags) updateData["tags"] = tags;
+    if (status) updateData["status"] = status;
 
     if (topic) {
       const topic_slug = generateSlug(topic);
@@ -319,12 +318,12 @@ export const updateQuestion = async (
         throwError("Topic not found", 404);
       }
 
-      updateData.topic_id = topicData.id;
+      updateData["topic_id"] = topicData.id;
     }
 
     if (question) {
-      updateData.question = question;
-      updateData.qn_slug = generateQuestionSlug(question);
+      updateData["question"] = question;
+      updateData["qn_slug"] = generateQuestionSlug(question);
     }
 
     const updatedQuestion = await QuestionService.updateQuestion(

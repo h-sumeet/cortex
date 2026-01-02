@@ -8,6 +8,7 @@ export interface CreateQuestionInput {
   options: QuestionOption[];
   explanation?: string;
   image_url?: string;
+  code_snippet?: string;
   difficulty: Difficulty;
   tags: string[];
   status?: string;
@@ -22,6 +23,7 @@ export interface UpdateQuestionInput {
   options?: QuestionOption[];
   explanation?: string;
   image_url?: string;
+  code_snippet?: string;
   difficulty?: Difficulty;
   tags?: string[];
   status?: string;
@@ -31,7 +33,8 @@ export interface UpdateQuestionInput {
 export interface QuestionOption {
   option_no: number;
   option_text: string;
-  image_url?: string;
+  code_snippet?: string | null;
+  image_url?: string | null;
 }
 
 export interface QuestionResponse {
@@ -42,11 +45,14 @@ export interface QuestionResponse {
   question: string;
   answer: number;
   options: QuestionOption[];
-  explanation?: string;
-  image_url?: string;
+  explanation?: string | null;
+  image_url?: string | null;
+  code_snippet?: string | null;
   difficulty: Difficulty;
   tags: string[];
   status: string;
+  upvotes: number;
+  is_premium: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -56,4 +62,24 @@ export interface QuestionFilterParams {
   seq_no?: number;
   tags?: string[];
   limit?: number;
+}
+
+export interface TopicInclude {
+  id: string;
+  topic: string;
+  topic_slug: string;
+  provider_id: string;
+  qn_count: number;
+  tags: string[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface QuestionWithTopic extends QuestionResponse {
+  topic: TopicInclude;
+}
+
+export interface QuestionsResult {
+  questions: QuestionWithTopic[];
+  totalCount: number;
 }

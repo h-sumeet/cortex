@@ -2,11 +2,12 @@ import prisma from "../config/prisma";
 import type {
   CreateQuestionInput,
   UpdateQuestionInput,
+  QuestionWithTopic,
+  QuestionsResult,
 } from "../types/question";
 import { getCache, setCache, deleteCachePattern } from "../utils/cache";
 import { CACHE_KEYS, CACHE_TTL, CACHE_PATTERNS } from "../constants/cache";
 import { QUESTION_DEFAULTS } from "../constants/question";
-import type { Question } from "@prisma/client";
 import { SERVICE_NAME } from "../constants/common";
 import { checkPremiumStatus } from "./PremiumService";
 import { throwError } from "../utils/response";
@@ -94,10 +95,10 @@ export const createQuestion = async (
 /**
  * Get question by slug
  */
-export const getQuestionBySlug = async (slug: string) => {
+export const getQuestionBySlug = async (slug: string): Promise<QuestionWithTopic | null> => {
   const cacheKey = CACHE_KEYS.QUESTIONS.BY_SLUG(slug);
 
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<QuestionWithTopic>(cacheKey);
   if (cached) return cached;
 
   const question = await prisma.question.findUnique({
@@ -119,10 +120,10 @@ export const getQuestionBySlug = async (slug: string) => {
 /**
  * Get question by ID
  */
-export const getQuestionById = async (id: string) => {
+export const getQuestionById = async (id: string): Promise<QuestionWithTopic | null> => {
   const cacheKey = CACHE_KEYS.QUESTIONS.BY_ID(id);
 
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<QuestionWithTopic>(cacheKey);
   if (cached) return cached;
 
   const question = await prisma.question.findUnique({
@@ -145,14 +146,14 @@ export const getQuestionByIndex = async (
   topicSlug: string,
   index: number,
   limit: number = QUESTION_DEFAULTS.FETCH_LIMIT
-) => {
+): Promise<QuestionsResult | null> => {
   const cacheKey = CACHE_KEYS.QUESTIONS.BY_TOPIC_AND_SEQ(
     topicSlug,
     index,
     limit
   );
 
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<QuestionsResult>(cacheKey);
   if (cached) return cached;
 
   const topic = await getTopicBySlug(topicSlug);
@@ -197,7 +198,7 @@ export const getQuestionsByTags = async (
   index: number,
   tags: string[],
   limit: number = QUESTION_DEFAULTS.FETCH_LIMIT
-): Promise<{ questions: Question[]; totalCount: number }> => {
+): Promise<QuestionsResult> => {
   const tagsKey = tags.sort().join(",");
   const cacheKey = CACHE_KEYS.QUESTIONS.BY_TOPIC_AND_TAGS(
     topicSlug,
@@ -206,7 +207,7 @@ export const getQuestionsByTags = async (
     limit
   );
 
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<QuestionsResult>(cacheKey);
   if (cached) return cached;
 
   const topic = await getTopicBySlug(topicSlug);
@@ -251,7 +252,7 @@ export const getBookmarkedQuestions = async (
   index: number,
   bookmarkedSeqNos: number[],
   limit: number = QUESTION_DEFAULTS.FETCH_LIMIT
-) => {
+): Promise<QuestionsResult | null> => {
   const topic = await getTopicBySlug(topicSlug);
   if (!topic) return null;
 
@@ -342,9 +343,9 @@ export const clearQuestionCache = async (): Promise<void> => {
  * @throws {Error} When single question is premium and user lacks access
  */
 export const filterPremiumQuestions = async (
-  questions: Question | Question[],
+  questions: QuestionWithTopic | QuestionWithTopic[],
   userId: string | undefined
-): Promise<Question[]> => {
+): Promise<QuestionWithTopic[]> => {
   const questionsArray = Array.isArray(questions) ? questions : [questions];
   const isSingleQuestion = !Array.isArray(questions) || questions.length === 1;
 
@@ -390,9 +391,9 @@ export const filterPremiumQuestions = async (
  * @throws {Error} When single question filtered out
  */
 const handleFilteredResult = (
-  filtered: Question[],
+  filtered: QuestionWithTopic[],
   isSingleQuestion: boolean
-): Question[] => {
+): QuestionWithTopic[] => {
   if (isSingleQuestion && filtered.length === 0) {
     throwError(ERRORS_MSG.PREMIUM_REQUIRED);
   }

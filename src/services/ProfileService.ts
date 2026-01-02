@@ -13,7 +13,7 @@ import { ERRORS_MSG } from "../constants/error";
 const getOrCreateProfile = async (userId: string) => {
   const cacheKey = CACHE_KEYS.PROFILE.BY_USER_ID(userId);
   const cached = await getCache(cacheKey);
-  if (cached) return cached;
+  if (cached) return cached as { id: string; user_id: string; bookmarks: unknown };
 
   let profile = await prisma.profile.findFirst({
     where: { user_id: userId },
@@ -111,7 +111,7 @@ export const toggleBookmark = async (
   const profile = await getOrCreateProfile(userId);
   const bookmarks = profile.bookmarks as UserBookmarkData[];
 
-  let bookmarkIndex = bookmarks.findIndex((b) => b.topic_id === topic.id);
+  const bookmarkIndex = bookmarks.findIndex((b) => b.topic_id === topic.id);
   let isNowBookmarked: boolean;
 
   if (bookmarkIndex === -1) {
