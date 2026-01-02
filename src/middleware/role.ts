@@ -1,25 +1,16 @@
 import type { Request, Response, NextFunction } from "express";
-import { throwError } from "../utils/response";
-import type { AuthenticatedUser, CredlockResponse } from "../types/profile";
-import { CREDLOCK_API } from "../constants/api";
-import { ERRORS_MSG } from "../constants/error";
 import { CUSTOM_HEADERS } from "../constants/common";
+import { ERRORS_MSG } from "../constants/error";
+import { throwError } from "../utils/response";
+import { CREDLOCK_API } from "../constants/api";
+import type { CredlockResponse } from "../types/profile";
+import { config } from "../config/app";
 
-// Extend Express Request to include user
-declare module "express-serve-static-core" {
-  interface Request {
-    user?: AuthenticatedUser;
-  }
-}
-
-/**
- * Authenticate user via CREDLOCK service
- */
-export const authenticate = async (
+export const checkAdmin = async (
   req: Request,
   _res: Response,
   next: NextFunction
-): Promise<void> => {
+) => {
   try {
     const authorization = req.headers.authorization;
     const refreshToken = req.headers[CUSTOM_HEADERS.REFRESH_TOKEN] as string;
@@ -48,48 +39,17 @@ export const authenticate = async (
         [CUSTOM_HEADERS.SERVICE_HEADER]: service,
       },
     });
-   
-    const data = await response.json() as CredlockResponse;
+
+    const data = (await response.json()) as CredlockResponse;
     if (data.status === "error") {
       throwError(data.msg || ERRORS_MSG.AUTH_FAILED, response.status);
     }
 
-    // Check if user is active
-    if (!data.data.user.isActive) {
-      throwError(ERRORS_MSG.USER_INACTIVE, 403);
+    if (data.data.user.email !== config.adminEmail) {
+      throwError(ERRORS_MSG.UNAUTHORIZED, 403);
     }
-
-    // Attach user to request
-    req.user = {
-      id: data.data.user.id,
-      fullname: data.data.user.fullname,
-      email: data.data.user.email,
-    };
-
     next();
   } catch (error) {
     next(error);
-  }
-};
-
-/**
- * Optional authentication - doesn't fail if no token provided
- */
-export const optionalAuth = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const authorization = req.headers.authorization;
-
-    if (!authorization) {
-      return next();
-    }
-
-    await authenticate(req, res, next);
-  } catch {
-    // Silently continue without user
-    next();
   }
 };

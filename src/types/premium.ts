@@ -1,12 +1,12 @@
 // Premium access types
 
-export interface PremiumStatusResponse {
+export interface SubscriptionStatusResponse {
   is_premium: boolean;
   plan?: string;
   expires_at?: string;
 }
 
-export interface PremiumCheckResult {
+export interface SubscriptionCheckResult {
   has_access: boolean;
   reason?: string;
 }

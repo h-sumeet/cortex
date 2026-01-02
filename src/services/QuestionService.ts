@@ -9,7 +9,7 @@ import { getCache, setCache, deleteCachePattern } from "../utils/cache";
 import { CACHE_KEYS, CACHE_TTL, CACHE_PATTERNS } from "../constants/cache";
 import { QUESTION_DEFAULTS } from "../constants/question";
 import { SERVICE_NAME } from "../constants/common";
-import { checkPremiumStatus } from "./PremiumService";
+import { checkSubscriptionStatus } from "./SubscriptionService";
 import { throwError } from "../utils/response";
 import { getTopicBySlug } from "./TopicService";
 import { ERRORS_MSG } from "../constants/error";
@@ -375,7 +375,7 @@ export const filterPremiumQuestions = async (
   }
 
   // Check premium status with external service
-  const premiumStatus = await checkPremiumStatus(
+  const premiumStatus = await checkSubscriptionStatus(
     userId,
     SERVICE_NAME,
     firstQuestion.topic_id

@@ -16,4 +16,5 @@ export interface IConfig {
   };
   discordAlert: string;
   credlockUrl: string;
+  adminEmail: string;
 }

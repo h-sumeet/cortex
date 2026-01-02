@@ -30,4 +30,5 @@ export const config: IConfig = {
 
   discordAlert: getRequiredEnvVar("DISCORD_WEBHOOK_URL"),
   credlockUrl: getRequiredEnvVar("CREDLOCK_URL"),
+  adminEmail: getRequiredEnvVar("ADMIN_EMAIL"),
 };
