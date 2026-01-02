@@ -1,7 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
 
 // Prisma error handler
-const handlePrismaError = (error: { code?: string; message?: string }): { code: number; message: string } => {
+const handlePrismaError = (error: {
+  code?: string;
+  message?: string;
+}): { code: number; message: string } => {
   // P2025: Record not found
   if (error.code === "P2025") {
     return {

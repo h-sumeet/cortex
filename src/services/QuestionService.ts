@@ -95,7 +95,9 @@ export const createQuestion = async (
 /**
  * Get question by slug
  */
-export const getQuestionBySlug = async (slug: string): Promise<QuestionWithTopic | null> => {
+export const getQuestionBySlug = async (
+  slug: string
+): Promise<QuestionWithTopic | null> => {
   const cacheKey = CACHE_KEYS.QUESTIONS.BY_SLUG(slug);
 
   const cached = await getCache<QuestionWithTopic>(cacheKey);
@@ -120,7 +122,9 @@ export const getQuestionBySlug = async (slug: string): Promise<QuestionWithTopic
 /**
  * Get question by ID
  */
-export const getQuestionById = async (id: string): Promise<QuestionWithTopic | null> => {
+export const getQuestionById = async (
+  id: string
+): Promise<QuestionWithTopic | null> => {
   const cacheKey = CACHE_KEYS.QUESTIONS.BY_ID(id);
 
   const cached = await getCache<QuestionWithTopic>(cacheKey);

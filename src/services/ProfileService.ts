@@ -13,7 +13,8 @@ import { ERRORS_MSG } from "../constants/error";
 const getOrCreateProfile = async (userId: string) => {
   const cacheKey = CACHE_KEYS.PROFILE.BY_USER_ID(userId);
   const cached = await getCache(cacheKey);
-  if (cached) return cached as { id: string; user_id: string; bookmarks: unknown };
+  if (cached)
+    return cached as { id: string; user_id: string; bookmarks: unknown };
 
   let profile = await prisma.profile.findFirst({
     where: { user_id: userId },
